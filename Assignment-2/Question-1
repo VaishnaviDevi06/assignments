@@ -1,0 +1,83 @@
+import heapq
+import math
+
+# Directions: 8 moves (horizontal, vertical, diagonal)
+directions = [(-1, -1), (-1, 0), (-1, 1),
+              (0, -1),          (0, 1),
+              (1, -1),  (1, 0), (1, 1)]
+
+# Heuristic (Euclidean distance)
+def heuristic(a, b):
+    return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
+
+# Best First Search (Greedy)
+def best_first_search(grid):
+    n = len(grid)
+    start, goal = (0,0), (n-1,n-1)
+
+    if grid[0][0] == 1 or grid[n-1][n-1] == 1:
+        return -1, []
+
+    visited = set()
+    pq = [(heuristic(start, goal), start, [start])]  # (priority, current, path)
+
+    while pq:
+        _, (x,y), path = heapq.heappop(pq)
+
+        if (x,y) == goal:
+            return len(path), path
+
+        if (x,y) in visited:
+            continue
+        visited.add((x,y))
+
+        for dx,dy in directions:
+            nx, ny = x+dx, y+dy
+            if 0<=nx<n and 0<=ny<n and grid[nx][ny]==0 and (nx,ny) not in visited:
+                heapq.heappush(pq, (heuristic((nx,ny), goal), (nx,ny), path+[(nx,ny)]))
+
+    return -1, []
+
+
+# A* Search
+def a_star_search(grid):
+    n = len(grid)
+    start, goal = (0,0), (n-1,n-1)
+
+    if grid[0][0] == 1 or grid[n-1][n-1] == 1:
+        return -1, []
+
+    g_cost = {start: 1}  # cost from start
+    pq = [(heuristic(start, goal), 1, start, [start])]  # (f=g+h, g, current, path)
+
+    while pq:
+        f, g, (x,y), path = heapq.heappop(pq)
+
+        if (x,y) == goal:
+            return g, path
+
+        for dx,dy in directions:
+            nx, ny = x+dx, y+dy
+            if 0<=nx<n and 0<=ny<n and grid[nx][ny]==0:
+                new_g = g+1
+                if (nx,ny) not in g_cost or new_g < g_cost[(nx,ny)]:
+                    g_cost[(nx,ny)] = new_g
+                    f_cost = new_g + heuristic((nx,ny), goal)
+                    heapq.heappush(pq, (f_cost, new_g, (nx,ny), path+[(nx,ny)]))
+
+    return -1, []
+
+
+# ----------- Testing with Examples -----------
+grids = [
+    [[0,1],[1,0]],
+    [[0,0,0],[1,1,0],[1,1,0]],
+    [[1,0,0],[1,1,0],[1,1,0]]
+]
+
+for i, grid in enumerate(grids,1):
+    print(f"\nExample {i}:")
+    bfs_len, bfs_path = best_first_search(grid)
+    a_star_len, a_star_path = a_star_search(grid)
+    print(f"Best First Search  → Path length: {bfs_len}, Path: {bfs_path if bfs_len!=-1 else ''}")
+    print(f"A* Search          → Path length: {a_star_len}, Path: {a_star_path if a_star_len!=-1 else ''}")
